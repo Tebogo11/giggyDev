@@ -1,0 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
+:root { font-family: Sora, system-ui, sans-serif; color: #151719; background: #ffffff; font-synthesis: none; }
+body { margin: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 100px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
