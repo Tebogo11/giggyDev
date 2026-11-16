@@ -87,13 +87,13 @@ GIGGYDEV_AI_MODEL=gpt-6.1-sol`;
           <button aria-pressed={multiple} onClick={() => setMultiple(true)}>Multiple models</button>
         </SetupChoices>
         <SetupSteps>
-          <li><strong>{playground ? 'Download and install.' : 'Install the local package.'}</strong> {playground ? 'Use the repository commands alongside this guide. npm run dev builds the library before launching the playground.' : 'The package is not published yet. Build and pack the repository, then install the generated tarball into your existing app. Replace the example absolute path with your checkout path.'}</li>
+          <li><strong>{playground ? 'Download and install.' : 'Install the local package.'}</strong> {playground ? 'Use the repository commands alongside this guide. npm run dev builds the library before launching the playground.' : 'Install giggydev from npm in your existing React app.'}</li>
           <li><strong>Configure {configPath}.</strong> {playground ? 'The playground imports the built integration from dist.' : 'Use giggydev/vite in your existing configuration, preserving your other plugins.'} Put <code>giggyDev()</code> before React transform plugins for source inspection. No app wrapper is required.</li>
           <li><strong>Create {envPath}.</strong> {multiple ? 'Set OPENAI_API_KEY for the two configured models. Add provider-specific keys if you enable more providers.' : 'Set the provider key and exact model ID as shown.'} <a href="#api-key">Follow the API key setup guide</a>. <code>apiKeyEnv</code> names a variable such as <code>OPENAI_API_KEY</code>; the actual value goes in the environment file. Keep local keys out of Git. Server-side plugin options also accept <code>ai.apiKey</code> for explicit configuration.</li>
           <li><strong>Restart and test.</strong> Run <code>npm run dev</code>{playground ? ' and open http://127.0.0.1:5173.' : ' using your app’s normal Vite command.'} Trigger a console/network example, open the lime widget and choose Chat. {multiple ? 'Choose Sol or Luna in the model dropdown.' : 'Your environment model appears in the dropdown.'} Missing setup produces an actionable error.</li>
           <li><strong>Review a real fix locally.</strong> Pick and attach a component, select relevant failures, ask a question, then send the edit request. Inspect the full diff before Approve and apply fix. Undo preserves later edits by refusing a stale restore.</li>
         </SetupSteps>
-        <p className="note">The hosted playground uses simulated replies and source samples. Live chat and file edits run through the local development server. Consumer production builds exclude the widget, instrumentation and development endpoints. Next.js integration is planned.</p>
+        <p className="note">The hosted playground uses simulated replies and source samples. Live chat and file edits run through the local development server. Consumer production builds exclude the widget, instrumentation and development endpoints. Next.js 16 Webpack is also supported; see the Next.js setup section.</p>
         <p><a href="https://github.com/Tebogo11/giggyDev" target="_blank" rel="noreferrer">View or download the repository ↗</a></p>
       </div>
       <ConfigStack>
@@ -101,13 +101,7 @@ GIGGYDEV_AI_MODEL=gpt-6.1-sol`;
 cd giggyDev
 npm install
 # Complete the config and env steps below, then:
-npm run dev` : `# In the giggyDev repository:
-npm install
-npm run build
-npm pack --pack-destination .test-build
-
-# In your existing Vite app (replace this path):
-npm install /absolute/path/to/giggyDev/.test-build/giggydev-0.1.0.tgz`} />
+npm run dev` : `npm install -D giggydev`} />
         <CodeBlock key={`${target}-${multiple}-config`} title={configPath} code={multiple ? full : basic} />
         <CodeBlock key={`${target}-${multiple}-env`} title={envPath} code={env} />
         <details><summary>React plugin order, additional providers and explicit key options</summary><p>For an app already using @vitejs/plugin-react, keep its existing import and use <code>plugins: [giggyDev(...), react()]</code>. The examples above do not require that additional package in this playground.</p><pre>{alternate}</pre><p>Model-level <code>apiKey</code> overrides <code>ai.apiKey</code>; environment keys are the fallback. <code>apiKeyEnv</code> lets each model name its own private environment variable. Changing the dropdown affects the next request; it does not change your environment file.</p></details>

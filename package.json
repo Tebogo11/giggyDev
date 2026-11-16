@@ -22,7 +22,7 @@
     "build:playground": "vite build playground",
     "preview": "vite preview playground --host 127.0.0.1 --port 4173",
     "typecheck": "tsc --noEmit",
-    "test": "npm run typecheck && npm run test:unit && npm run build && npm run build:playground && npm run build:demo && npm run build:fixture && npm run test:build && playwright test",
+    "test": "npm run typecheck && npm run test:unit && npm run build:playground && npm run build:demo && npm run build:fixture && npm run test:build && playwright test",
     "predev": "npm run build",
     "build:demo": "vite build playground --mode demo --outDir demo-dist",
     "test:unit": "node scripts/build-tests.mjs && node --test tests/unit/capture.test.mjs tests/unit/vite.test.mjs tests/unit/source.test.mjs tests/unit/ai.test.mjs tests/unit/config-validation.test.mjs tests/unit/markdown.test.mjs tests/unit/next.test.mjs tests/unit/consumer-setup.test.mjs tests/unit/edit-chat.test.mjs tests/unit/ai-reply.test.mjs tests/unit/padding-card.test.mjs tests/unit/consumer-install.test.mjs",
@@ -32,8 +32,9 @@
     "build:fixture": "vite build tests/fixtures/consumer --outDir ../../../.test-build/consumer --emptyOutDir",
     "verify:consumers": "node scripts/verify-consumers.mjs",
     "test:next": "playwright test --config playwright.next.config.ts",
-    "release:check": "npm run typecheck && npm run test:unit && npm run build && npm run build:playground && npm run build:demo && npm run build:fixture && npm run test:build && npm pack --dry-run",
-    "pretest:next": "node scripts/prepare-next-tests.mjs"
+    "release:check": "npm run typecheck && npm run test:unit && npm run build:playground && npm run build:demo && npm run build:fixture && npm run test:build && npm pack --dry-run",
+    "pretest:next": "node scripts/prepare-next-tests.mjs",
+    "pretypecheck": "npm run build"
   },
   "dependencies": {
     "react": "^19.0.0",
@@ -62,7 +63,7 @@
       "optional": true
     }
   },
-  "description": "Development-only debugging widget with console, network, component context and reviewed AI fixes for React apps.",
+  "description": "AI debugging widget for React that connects your chosen LLM to selected DOM elements, console errors, network requests and source code, with reviewed fixes you approve.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Tebogo11/giggyDev.git"

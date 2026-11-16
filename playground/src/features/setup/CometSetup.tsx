@@ -18,7 +18,7 @@ export default defineConfig({
             label: 'Claude via CometAPI',
             provider: 'openai-compatible',
             baseURL: 'https://api.cometapi.com/v1',
-            model: 'claude-sonnet-5', // example: verify in the catalog
+            model: 'your-cometapi-claude-model-id', // example: verify in the catalog
             apiKeyEnv: 'COMETAPI_KEY', // variable name, not the secret
           },
           {
@@ -26,7 +26,7 @@ export default defineConfig({
             label: 'GPT via CometAPI',
             provider: 'openai-compatible',
             baseURL: 'https://api.cometapi.com/v1',
-            model: 'gpt-5.5', // replace with your chosen text model ID
+            model: 'your-cometapi-gpt-model-id', // replace with your chosen text model ID
             apiKeyEnv: 'COMETAPI_KEY',
           },
         ],
@@ -44,10 +44,11 @@ export default defineConfig({
     <div className="comet-setup" aria-labelledby="comet-heading">
       <h3 id="comet-heading">One key, multiple text models with CometAPI</h3>
       <p>Prefer one account for several model providers? CometAPI is an optional gateway for text chat. Use a CometAPI key with its OpenAI-compatible endpoint, then choose among the models you configure in the widget. This integration supports text prompts and replies only for now.</p>
+      <p className="guide-note">Affiliate disclosure: I may earn a commission from eligible purchases made through the CometAPI account link.</p>
       <div className="guide-grid">
         <article>
           <h3>1. Create a key and choose text models</h3>
-          <p>Follow the <a href="https://www.cometapi.com/quickstart/" target="_blank" rel="noreferrer">CometAPI quickstart</a> to create an account and API key. Browse <a href="https://www.cometapi.com/models/?search=claude" target="_blank" rel="noreferrer">Claude and other models</a>, check access and pricing, and copy the exact model ID. The IDs below are examples; choose models that support streaming Chat Completions.</p>
+          <p>Create a <a href="https://www.cometapi.com/?ref=tebogo" target="_blank" rel="sponsored noopener noreferrer">CometAPI account</a>, then follow the <a href="https://www.cometapi.com/quickstart/" target="_blank" rel="noreferrer">CometAPI quickstart</a> to generate an API key. Browse <a href="https://www.cometapi.com/models/?search=claude" target="_blank" rel="noreferrer">Claude and other models</a>, check access and pricing, and copy the exact model ID. The IDs below are examples; choose models that support streaming Chat Completions.</p>
           <p>Your selected logs, request payloads, source and prompts are sent through CometAPI when you use these models.</p>
           <h3>2. Save the key locally</h3>
           <p>Create <code>{playground ? 'playground/.env.local' : '.env.local'}</code> in your Vite env directory. Replace the placeholder; keep this file out of Git and never prefix the key with <code>VITE_</code>.</p>
