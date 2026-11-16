@@ -1,81 +1,8 @@
 # giggyDev
 
-AI debugging widget for React that connects your chosen LLM to selected DOM elements, console errors, network requests and source code, with reviewed fixes you approve.
+[Try the live playground](https://giggydev.netlify.app/) — explore the widget with simulated AI replies and code edits.
 
-Pick a rendered element directly in your app and give the AI its DOM snapshot and available source context. Attach console entries and network requests, ask questions, then review and approve a proposed single-file fix. Keys stay on your development server. Supports Vite and Next.js 16 with Webpack; consumer production builds exclude the widget. The hosted playground uses simulated replies and edits.
-
-## Getting started
-
-### 1. Install in your React app
-
-```sh
-npm install -D giggydev
-```
-
-### 2. Add your framework integration
-
-For **Vite**, add the plugin to your existing configuration before React transform plugins:
-
-```ts
-// vite.config.ts
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import giggyDev from 'giggydev/vite';
-
-export default defineConfig({
-  plugins: [giggyDev(), react()],
-});
-```
-
-For **Next.js 16**, install the source loader dependency and use Webpack development (Turbopack is not supported):
-
-```sh
-npm install -D esbuild
-```
-
-```js
-// next.config.mjs
-import { withGiggyDev } from 'giggydev/next';
-
-export default withGiggyDev({ reactStrictMode: true });
-```
-
-Start Next development with `next dev --webpack`. No React wrapper is needed for either integration.
-
-### 3. Connect your LLM API
-
-Create `.env.local` in your app's root (or configured Vite env directory). OpenAI is one example; Anthropic and OpenAI-compatible services are supported too:
-
-```env
-GIGGYDEV_AI_PROVIDER=openai
-GIGGYDEV_AI_KEY=replace-with-your-provider-key
-GIGGYDEV_AI_MODEL=your-provider-model-id
-```
-
-Use `anthropic` with an Anthropic key/model, or `openai-compatible` with your service's model ID and `GIGGYDEV_AI_BASE_URL`. Keep this file out of Git. Never prefix API keys with `VITE_` or `NEXT_PUBLIC_`. Restart the development server after changing configuration. Missing keys or models produce a setup error; capture and inspection still work.
-
-To offer multiple models in the widget dropdown, configure `ai.models`; each entry names its model and server-side key variable. See [AI keys and model selection](#ai-keys-and-model-selection).
-
-### Optional: multiple text models through CometAPI
-
-Create a [CometAPI account](https://www.cometapi.com/?ref=tebogo), generate an API key and choose a supported text model from its [model catalog](https://www.cometapi.com/models/). CometAPI is optional; you can also use providers directly.
-
-*Affiliate disclosure: I may earn a commission from eligible purchases made through this link.*
-
-```env
-GIGGYDEV_AI_PROVIDER=openai-compatible
-GIGGYDEV_AI_BASE_URL=https://api.cometapi.com/v1
-GIGGYDEV_AI_KEY=replace-with-your-cometapi-key
-GIGGYDEV_AI_MODEL=your-cometapi-text-model-id
-```
-
-Select a model that supports streaming Chat Completions. When configured this way, your submitted prompts and selected context are sent through CometAPI. This integration handles text prompts and replies.
-
-### 4. Start debugging
-
-Run your app's development command, open the lime giggyDev launcher, and use **Find component** to select an element. Attach relevant Console or Network entries, choose your configured model and send a question. For example: “Explain the selected error using the attached component and request payload.”
-
-Enable **Edit code** when requesting a change. Review the diff, approve it to apply locally, or cancel. Undo remains in the chat; writes stay unstaged in Git. The AI receives selected context rather than unrestricted DOM control. Refreshing the page clears the chat.
+A development-only debugging overlay for React/Vite. Console and network capture, filtering, expandable metadata and selected context are implemented. The hosted playground includes simulated chat. DOM element picking and Vite development source inspection are available. Configured AI chat and reviewed single-file fixes are available locally. Next.js integration is planned.
 
 ## Local playground
 
@@ -93,11 +20,11 @@ Run a test, open the lime widget and choose Console or Network. Check a row to a
 
 ## Separate builds
 
-| Command | Output | Widget |
-| --- | --- | --- |
-| `npm run build` | `dist/` | Library runtime and Vite/Next.js integrations only |
-| `npm run build:playground` | `playground/dist/` | Production playground with widget + simulated replies |
-| `npm run build:demo` | `playground/demo-dist/` | Production playground with widget + simulated replies |
+| Command                    | Output                  | Widget                                                |
+| -------------------------- | ----------------------- | ----------------------------------------------------- |
+| `npm run build`            | `dist/`                 | Library runtime and Vite/Next.js integrations only    |
+| `npm run build:playground` | `playground/dist/`      | Production playground with widget + simulated replies |
+| `npm run build:demo`       | `playground/demo-dist/` | Production playground with widget + simulated replies |
 
 `netlify.toml` builds the library, builds the demo and publishes **only** `playground/demo-dist`. Use `npm run preview:demo` to preview it locally on port 4188. The demo explicitly opts into browser capture and has no source-reading, editor, file-writing or AI endpoints.
 
@@ -130,6 +57,7 @@ The Vite integration activates only for `serve` + `development`, with a producti
 ## Framework support
 
 Vite development and Next.js 16 Webpack development are supported. Next.js Turbopack is not supported. See the [Next.js setup](#nextjs-integration-initial-webpack-adapter).
+
 ### Offline browser check
 
 In environments that block local HTTP connections, the same built hosted demo can be exercised with Playwright route fulfillment from local artifacts (no live server):
@@ -199,14 +127,28 @@ For multiple choices, define an allowlist. The widget dropdown displays these la
 
 ```ts
 export default defineConfig({
-  plugins: [giggyDev({
-    ai: {
-      models: [
-        { id: 'openai-coding', provider: 'openai', model: 'your-openai-model-id', apiKeyEnv: 'OPENAI_API_KEY', label: 'OpenAI coding' },
-        { id: 'claude-coding', provider: 'anthropic', model: 'your-anthropic-model-id', apiKeyEnv: 'ANTHROPIC_API_KEY', label: 'Claude coding' },
-      ],
-    },
-  })],
+  plugins: [
+    giggyDev({
+      ai: {
+        models: [
+          {
+            id: "openai-coding",
+            provider: "openai",
+            model: "your-openai-model-id",
+            apiKeyEnv: "OPENAI_API_KEY",
+            label: "OpenAI coding",
+          },
+          {
+            id: "claude-coding",
+            provider: "anthropic",
+            model: "your-anthropic-model-id",
+            apiKeyEnv: "ANTHROPIC_API_KEY",
+            label: "Claude coding",
+          },
+        ],
+      },
+    }),
+  ],
 });
 ```
 

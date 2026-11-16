@@ -10,7 +10,7 @@ const Preview = styled.figure`
 export function WidgetPreview() {
   const [missing, setMissing] = useState(false);
   return <Preview aria-label="Widget screenshot">
-    {missing ? <div className="missing-image">The widget preview image is not available yet.</div> : <img src="/images/widget-preview.png" width="1659" height="652" alt="giggyDev open over the playground, showing a formatted AI explanation and code block beside Console, Network, Elements and Sources tabs." onError={() => setMissing(true)} />}
-    <figcaption>Debug with the full picture: selected requests, readable answers and reviewed code fixes in your app.</figcaption>
+    {missing ? <div className="missing-image">The widget preview image is not available yet.</div> : <img src="/images/widget-preview.png" width="1659" height="649" alt="giggyDev explaining a selected aborted network request, with its source location, likely causes and attached request context." onError={() => setMissing(true)} />}
+    <figcaption>From a failed request to an explanation: select the error, attach its context and ask your chosen AI model what happened.</figcaption>
   </Preview>;
 }
