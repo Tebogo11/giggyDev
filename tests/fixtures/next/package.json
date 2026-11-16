@@ -1,0 +1,8 @@
+{
+  "name": "giggydev-next-consumer",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "next dev --webpack", "build": "next build --webpack", "start": "next start" },
+  "dependencies": { "next": "^16.4.6", "react": "^19.0.0", "react-dom": "^19.0.0" },
+  "devDependencies": { "esbuild": "^0.25.0" }
+}
