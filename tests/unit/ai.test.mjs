@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {mkdir,mkdtemp,writeFile,readFile,realpath} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 import {resolveModels,publicConfiguration} from '../../.test-build/aiConfig.mjs';
+import {execFileSync} from 'node:child_process';
+import {tmpdir} from 'node:os';
 import {generate} from '../../.test-build/aiProvider.mjs';
 import {createFixStore} from '../../.test-build/fixes.mjs';
 
@@ -12,6 +14,32 @@ test('AI setup exposes model choices but never credentials, and reports missing 
   assert.match(publicConfiguration(resolveModels({},{})).setupMessage,/AI key and model/);
   assert.equal(resolveModels({}, {GIGGYDEV_AI_MODEL:'from-env',GIGGYDEV_AI_KEY:'env-secret'})[0].key,'env-secret');
 });
+test('cancelling a proposal preserves its file and prevents subsequent apply',async()=>{
+  const root=await mkdtemp(resolve('.test-build/cancel-'));const file=await realpath(root).then(root=>join(root,'Card.tsx'));
+  const before='export const padding = 4;';await writeFile(file,before);
+  const store=createFixStore();const proposal=store.propose({id:'source',file,path:'Card.tsx',code:before},'export const padding = 24;','Adjust padding');
+  store.cancel(proposal.id);
+  assert.equal(store.latest().state,'cancelled');
+  assert.equal(await readFile(file,'utf8'),before);
+  await assert.rejects(()=>store.apply(proposal.id),/unavailable/);
+  assert.throws(()=>store.cancel(proposal.id),/pending/);
+});
+
+test('reviewed writes remain unstaged and preserve the Git index',async()=>{
+  const root=await realpath(await mkdtemp(join(tmpdir(),'giggydev-git-')));const file=join(root,'Card.tsx');
+  const git=(...args)=>execFileSync('git',['-C',root,...args],{encoding:'utf8'});
+  git('init','-q');const before='export const padding = 4;\n';await writeFile(file,before);git('add','Card.tsx');
+  const index=await readFile(join(root,'.git/index'));
+  const store=createFixStore();const proposal=store.propose({id:'source',file,path:'Card.tsx',code:before},'export const padding = 24;\n','Fix spacing');
+  await store.apply(proposal.id);
+  assert.deepEqual(await readFile(join(root,'.git/index')),index);
+  assert.equal(git('show',':Card.tsx'),before);
+  assert.equal(git('diff','--name-only').trim(),'Card.tsx');
+  await store.undo(proposal.id);
+  assert.deepEqual(await readFile(join(root,'.git/index')),index);
+  assert.equal(git('diff','--name-only').trim(),'');
+});
+
 test('provider adapter streams fragmented events and keeps the key in server request headers',async()=>{
   const original=globalThis.fetch; const frames='data: {"choices":[{"delta":{"content":"Hello "}}]}\n\ndata: {"choices":[{"delta":{"content":"world"}}]}\n\ndata: [DONE]\n\n';
   globalThis.fetch=async(url,init)=>{
@@ -63,6 +91,12 @@ test('AI endpoints bind fixes to selected sources, expose no key, and restore re
     assert.equal(JSON.parse((await request('/review')).body).state,'applied');
     assert.equal((await request('/undo',{id:proposal.id},{'x-giggy-token':'wrong'})).statusCode,403);assert.equal(await readFile(file,'utf8'),after);
     assert.equal((await request('/undo',{id:proposal.id})).statusCode,200);assert.equal(await readFile(file,'utf8'),before);
+    const cancelled=JSON.parse((await request('/propose',input)).body);
+    assert.equal((await request('/cancel',{id:cancelled.id},{'x-giggy-token':'wrong'})).statusCode,403);
+    assert.equal((await request('/cancel',{id:cancelled.id})).statusCode,200);
+    assert.equal(JSON.parse((await request('/review')).body).state,'cancelled');
+    assert.notEqual((await request('/apply',{id:cancelled.id})).statusCode,200);
+    assert.equal(await readFile(file,'utf8'),before);
   } finally {globalThis.fetch=original;}
 });
 

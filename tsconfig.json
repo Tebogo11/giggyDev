@@ -17,6 +17,7 @@
     "playground/src",
     "playground/vite.config.ts",
     "tests",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    "playwright.next.config.ts"
   ]
 }

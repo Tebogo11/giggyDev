@@ -1,8 +1,8 @@
 import type { AIClient, ChatRequest } from '../ai/types';
 
-export function createAIClient(token: string): AIClient {
+export function createAIClient(token: string, prefix = '/__giggydev/'): AIClient {
   async function request(path: string, data?: unknown, signal?: AbortSignal) {
-    const response = await fetch(`/__giggydev/ai/${path}`, {
+    const response = await fetch(`${prefix}ai/${path}`, {
       method: data === undefined ? 'GET' : 'POST',
       headers: { 'X-Giggy-Token': token, ...(data === undefined ? {} : { 'Content-Type': 'application/json' }) },
       body: data === undefined ? undefined : JSON.stringify(data), signal,
@@ -16,7 +16,7 @@ export function createAIClient(token: string): AIClient {
   return {
     configuration: async () => (await request('config')).json(),
     review: async () => (await request('review')).json(),
-    async chat(data: ChatRequest, onDelta, signal) {
+    async chat(data: ChatRequest, onDelta, signal, onProposal) {
       const response = await request('chat', data, signal);
       if (!response.body) throw new Error('AI response has no stream');
       const reader = response.body.getReader(), decoder = new TextDecoder();
@@ -32,6 +32,7 @@ export function createAIClient(token: string): AIClient {
             if (!line.trim()) continue;
             const event = JSON.parse(line);
             if (event.type === 'delta') onDelta(String(event.text));
+            if (event.type === 'proposal') onProposal?.(event.proposal);
             if (event.type === 'error') throw new Error(event.message);
             if (event.type === 'done') completed = true;
           }
@@ -43,5 +44,6 @@ export function createAIClient(token: string): AIClient {
     propose: async data => (await request('propose', data)).json(),
     apply: async id => { await request('apply', { id }); },
     undo: async id => { await request('undo', { id }); },
+    cancel: async id => { await request('cancel', { id }); },
   };
 }

@@ -20,7 +20,8 @@ export const Eyebrow = styled.p`
 
 export const Navigation = styled.nav`
   display: grid; gap: 6px;
-  button { border: 0; text-align: left; padding: 12px; border-radius: 9px; background: transparent; color: ${theme.muted}; }
+  button { display: flex; align-items: center; justify-content: space-between; gap: 6px; border: 0; text-align: left; padding: 12px; border-radius: 9px; background: transparent; color: ${theme.muted}; }
+  .error-count { display: inline-grid; place-items: center; flex-shrink: 0; min-width: 20px; height: 20px; padding: 0 3px; border-radius: 5px; background: #dc2626; color: white; font: 700 10px system-ui; }
   button[aria-pressed=true] { background: #a3f00015; color: #b4fa36; }
 `;
 

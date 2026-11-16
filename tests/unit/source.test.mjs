@@ -72,5 +72,9 @@ test('Vite development pipeline resolves the instrumented JSX runtime and fragme
     const runtime=await server.transformRequest('virtual:giggydev/jsx-dev-runtime');
     assert.match(runtime.code,/data-giggy-source/);
     assert.match(runtime.code,/Fragment/);
+    const main=await server.transformRequest('/src/main.tsx');
+    assert.match(main.code,/import\.meta\.hot\.accept\(/);
+    const entry=await server.moduleGraph.getModuleByUrl('/src/main.tsx');
+    assert.ok([...entry.acceptedHmrDeps].some(module=>module.file?.replaceAll('\\','/').endsWith('/src/App.tsx')), 'Playground source edits must stop at the main entry HMR boundary');
   } finally {await server.close();}
 });

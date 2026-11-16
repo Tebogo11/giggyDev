@@ -3,7 +3,10 @@ import { build } from 'tsup';
 import { gzipSync } from 'node:zlib';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
-await build({ entry: { vite: 'src/vite/index.ts' }, format: ['esm'], dts: true, clean: true });
+await build({ entry: { vite: 'src/vite/index.ts', next: 'src/next/index.ts' }, format: ['esm'], dts: true, clean: true });
+await bundle({ entryPoints: ['src/next/loader.ts'], bundle: true, platform: 'node', format: 'cjs', target: 'node20', external: ['esbuild'], outfile: 'dist/next-loader.cjs' });
+await bundle({ entryPoints: ['src/next/client.ts'], bundle: true, minify: true, format: 'esm', outfile: 'dist/next-client.js' });
+await bundle({ entryPoints: ['src/next/jsx-dev-runtime.ts'], bundle: true, minify: true, format: 'esm', external: ['react/jsx-dev-runtime'], outfile: 'dist/next-jsx-dev-runtime.js' });
 const result = await bundle({
   entryPoints: { client: 'src/runtime/index.ts' },
   bundle: true,

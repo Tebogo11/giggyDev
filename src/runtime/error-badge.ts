@@ -6,7 +6,7 @@ export function attachErrorBadge(launcher: HTMLButtonElement) {
   const badge = document.createElement('span');
   badge.id = 'giggydev-error-badge';
   badge.setAttribute('role', 'img');
-  badge.style.cssText = 'position:absolute;top:-7px;right:-7px;width:22px;height:22px;padding:0;border:2px solid #151719;border-radius:50%;background:#dc2626;color:white;font:700 9px/18px system-ui;box-sizing:border-box;text-align:center;pointer-events:none';
+  badge.style.cssText = 'position:absolute;top:-7px;right:-7px;width:22px;height:22px;padding:0;border:2px solid #151719;border-radius:5px;background:#dc2626;color:white;font:700 9px/18px system-ui;box-sizing:border-box;text-align:center;pointer-events:none';
   launcher.append(badge);
   launcher.setAttribute('aria-describedby', badge.id);
   function update() {

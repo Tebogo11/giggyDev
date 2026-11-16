@@ -33,6 +33,9 @@ test('built hosted demo: all six controls, context selection and responsive layo
     await page.getByRole('button',{name:'Single model',exact:true}).click();
     await expect(page.getByLabel('playground/.env.local',{exact:true})).toContainText('GIGGYDEV_AI_MODEL=gpt-6.1-sol');
     await expect(page.getByRole('button', { name: 'Open giggyDev' })).toBeVisible();
+    await page.getByRole('button', {name:'Check card padding'}).click();
+    await expect(page.getByTestId('padding-result')).toContainText('Not fixed yet');
+    expect(await page.locator('#padding-fix-card').evaluate(node=>getComputedStyle(node).padding)).toBe('4px');
     await page.screenshot({ path: 'test-results/playground.png', fullPage: true });
     await page.getByRole('button', { name: 'Log a structured object' }).click();
     await page.getByRole('button', { name: 'Trigger a performance warning' }).click();
@@ -65,6 +68,16 @@ test('built hosted demo: all six controls, context selection and responsive layo
     await expect(page.getByRole('dialog')).toContainText('Download giggyDev and try it for yourself.');
     await expect(page.getByRole('dialog').getByRole('link',{name:'Get started',exact:true})).toHaveAttribute('href','#start');
     await expect(page.getByRole('button',{name:'Propose fix',exact:true})).toHaveCount(0);
+    await page.getByLabel('Message', {exact:true}).fill('Show Markdown preview');
+    await page.getByRole('button', {name:'Send demo message'}).click();
+    await expect(page.getByRole('heading', {name:'Markdown preview',exact:true})).toBeVisible();
+    await expect(page.getByRole('log').locator('pre code')).toContainText('throw new Error');
+    await expect(page.getByRole('log').locator('ul li')).toHaveCount(2);
+    await expect(page.getByRole('log').locator('ol li')).toHaveCount(2);
+    await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable:true, value:{writeText:async(text:string)=>{document.documentElement.dataset.copied=text;}} }));
+    await page.getByRole('button',{name:'Copy code',exact:true}).click();
+    await expect(page.getByRole('log')).toContainText('Copied');
+    expect(await page.evaluate(()=>document.documentElement.dataset.copied)).toContain('throw new Error');
     await page.screenshot({ path: 'test-results/widget.png' });
     await page.getByRole('button', { name: /Remove Profile loaded/ }).click();
     await expect(page.getByLabel('Selected context')).toContainText('1 selected');
@@ -90,6 +103,56 @@ test('built hosted demo: all six controls, context selection and responsive layo
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await page.getByRole('button', { name: 'Open giggyDev' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
+});
+
+test('padding preview follows source updates but resets to 4px on a fresh page',async({page})=>{
+  await page.route('**/*',async route=>{
+    const url=new URL(route.request().url());
+    if(url.origin!=='http://padding.test')return route.abort();
+    if(url.pathname==='/')return route.fulfill({contentType:'text/html',body:'<html><body><div id="root"></div><script type="module" src="/fixture.js"></script></body></html>'});
+    if(url.pathname==='/fixture.js')return route.fulfill({contentType:'text/javascript',body:await readFile('.test-build/padding-preview.js','utf8')});
+    return route.fulfill({status:404});
+  });
+  await page.goto('http://padding.test');
+  const card=page.locator('#preview-card');
+  await expect(card).toHaveCSS('padding','4px');
+  await page.getByRole('button',{name:'Apply source update'}).click();
+  await expect(card).toHaveCSS('padding','24px');
+  await page.getByRole('button',{name:'Undo source update'}).click();
+  await expect(card).toHaveCSS('padding','4px');
+  await page.goto('http://padding.test/?source=24px');
+  await expect(card).toHaveCSS('padding','4px');
+  await page.getByRole('button',{name:'Remount after source update'}).click();
+  await expect(card).toHaveCSS('padding','24px');
+  await page.reload();
+  await expect(card).toHaveCSS('padding','4px');
+});
+
+test('hosted padding simulation reviews before applying, supports Undo and resets on reload', async ({page}) => {
+  await serveDemo(page);
+  const liveCalls:string[]=[];
+  page.on('request',request=>{if(request.url().includes('/__giggydev/ai/'))liveCalls.push(request.url());});
+  await page.goto('http://giggy.test');
+  const card=page.locator('#padding-fix-card');
+  const padding=()=>card.evaluate(node=>getComputedStyle(node).padding);
+  expect(await padding()).toBe('4px');
+  await page.getByRole('button',{name:'Simulate padding fix',exact:true}).click();
+  await expect(page.getByRole('region',{name:'Simulated padding diff'})).toContainText("+ padding: '24px'");
+  expect(await padding()).toBe('4px');
+  await page.getByRole('button',{name:'Cancel simulation'}).click();
+  expect(await padding()).toBe('4px');
+  await page.getByRole('button',{name:'Simulate padding fix',exact:true}).click();
+  await page.getByRole('button',{name:'Approve simulated fix'}).click();
+  expect(await padding()).toBe('24px');
+  await page.getByRole('button',{name:'Check card padding'}).click();
+  await expect(page.getByTestId('padding-result')).toContainText('Passed');
+  await page.getByRole('button',{name:'Undo simulated fix'}).click();
+  expect(await padding()).toBe('4px');
+  await page.getByRole('button',{name:'Simulate padding fix',exact:true}).click();
+  await page.getByRole('button',{name:'Approve simulated fix'}).click();
+  await page.reload();
+  expect(await padding()).toBe('4px');
+  expect(liveCalls).toEqual([]);
 });
 
 test('packaged runtime lazy-loads inspector with isolated styles and stays inert without dev flag', async ({ page }) => {
@@ -134,10 +197,13 @@ test('component picker highlights, blocks app actions, restores on Escape and re
   const badgeBounds = await badge.boundingBox();
   expect(badgeBounds?.width).toBe(22);
   expect(badgeBounds?.height).toBe(22);
+  expect(await badge.evaluate(node => getComputedStyle(node).borderRadius)).toBe('5px');
   await page.getByRole('button', { name: 'Cancel a fetch request' }).click();
   await expect(badge).toHaveText('2');
   await launcher.click();
   await expect(badge).toBeHidden();
+  await expect(page.getByLabel('1 console errors', {exact:true})).toBeVisible();
+  await expect(page.getByLabel('1 network errors', {exact:true})).toBeVisible();
 
   await page.getByRole('button', { name: /Find component/ }).click();
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -176,58 +242,88 @@ test('component picker highlights, blocks app actions, restores on Escape and re
   await launcher.click();
   await page.getByRole('button', { name: 'Network', exact: true }).click();
   await page.getByRole('button', { name: 'Clear network' }).click();
+  await expect(page.getByLabel('1 network errors', {exact:true})).toHaveCount(0);
   await expect(badge).toBeHidden();
 });
 
-test('local AI setup, model selection, streaming, reviewed apply and reload-safe Undo',async({page})=>{
-  let ready=false, chatCalls=0, applyCalls=0, undoCalls=0;
-  let state: 'proposed'|'applied'|'undone'='proposed';
-  let hasProposal=false;
-  const proposal={id:'review-one',path:'Button.tsx',before:'const value = 1;',after:'const value = 2;',explanation:'Correct the value'};
+test('single-submit chat routes edit intent and retains inline review history until refresh',async({page})=>{
+  let ready=false, chatCalls=0, applyCalls=0, undoCalls=0, cancelCalls=0, proposals=0;
   await page.route('**/*',async route=>{
     const url=new URL(route.request().url());
-    if(url.origin!=='http://ai.test') return route.abort();
-    if(url.pathname==='/') return route.fulfill({contentType:'text/html',body:'<html><body><h1>Local fixture</h1><script type="module" src="/__giggydev/client.js"></script></body></html>'});
-    if(url.pathname.startsWith('/__giggydev/ai/')) {
+    if(url.origin!=='http://ai.test')return route.abort();
+    if(url.pathname==='/')return route.fulfill({contentType:'text/html',body:'<html><body><h1>Local fixture</h1><script type="module" src="/__giggydev/client.js"></script></body></html>'});
+    if(url.pathname.startsWith('/__giggydev/ai/')){
       expect(route.request().headers()['x-giggy-token']).toBe('fixture-session');
       const operation=url.pathname.split('/').at(-1);
-      if(operation==='config') return route.fulfill({json:{models:[{id:'first',provider:'openai',model:'configured-first',label:'First model',ready},{id:'second',provider:'openai',model:'configured-second',label:'Second model',ready}],setupMessage:ready?undefined:'Add an AI key and model: GIGGYDEV_AI_KEY and GIGGYDEV_AI_MODEL'}});
-      if(operation==='review') return route.fulfill({json:hasProposal?{...proposal,state}:null});
+      if(operation==='config')return route.fulfill({json:{models:[{id:'first',provider:'openai',model:'first',label:'First model',ready},{id:'second',provider:'openai',model:'second',label:'Second model',ready}],setupMessage:ready?undefined:'Add GIGGYDEV_AI_KEY and GIGGYDEV_AI_MODEL'}});
       const data=route.request().postDataJSON();
-      if(operation==='chat') {chatCalls++;expect(data.modelId).toBe('second');return route.fulfill({contentType:'application/x-ndjson',body:'{"type":"delta","text":"The selected "}\n{"type":"delta","text":"model is responding."}\n{"type":"done"}\n'});}
-      if(operation==='propose') {hasProposal=true;return route.fulfill({json:proposal});}
-      if(operation==='apply') {expect(data).toEqual({id:proposal.id});applyCalls++;state='applied';return route.fulfill({json:{ok:true}});}
-      if(operation==='undo') {undoCalls++;state='undone';return route.fulfill({json:{ok:true}});}
+      if(operation==='chat'){
+        chatCalls++;expect(data.modelId).toBe('second');
+        const question=data.messages.at(-1).content;
+        let events;
+        if(question.startsWith('Change padding')){
+          expect(data.editCode).toBe(true);
+          const proposal={id:`review-${++proposals}`,path:'Card.tsx',before:'const padding = 4;',after:'const padding = 24;',explanation:'Use the requested spacing.'};
+          events=[{type:'proposal',proposal},{type:'done'}];
+        }else events=[{type:'delta',text:'This is an explanation, without a code proposal.'},{type:'done'}];
+        return route.fulfill({contentType:'application/x-ndjson',body:events.map(event=>JSON.stringify(event)).join('\n')+'\n'});
+      }
+      if(operation==='apply'){applyCalls++;return route.fulfill({json:{ok:true}});}
+      if(operation==='undo'){undoCalls++;return route.fulfill({json:{ok:true}});}
+      if(operation==='cancel'){cancelCalls++;return route.fulfill({json:{ok:true}});}
+      throw new Error(`Unexpected separate AI operation: ${operation}`);
     }
     const filename=url.pathname.replace('/__giggydev/','');
-    if(!/^(client\.js|chunks\/[\w-]+\.js)$/.test(filename)) return route.fulfill({status:404});
-    const code=await readFile(resolve('dist',filename),'utf8');
-    return route.fulfill({contentType:'text/javascript',body:(filename==='client.js'?'const __GIGGY_DEV__=true; const __GIGGY_SOURCE_TOKEN__="fixture-session";\n':'')+code});
+    if(!/^(client\.js|chunks\/[\w-]+\.js)$/.test(filename))return route.fulfill({status:404});
+    return route.fulfill({contentType:'text/javascript',body:(filename==='client.js'?'const __GIGGY_DEV__=true; const __GIGGY_SOURCE_TOKEN__="fixture-session";\n':'')+await readFile(resolve('dist',filename),'utf8')});
   });
-  await page.goto('http://ai.test');await page.getByRole('button',{name:'Open giggyDev'}).click();
-  await page.getByLabel('Message',{exact:true}).fill('Explain the issue');await page.getByRole('button',{name:'Send message',exact:true}).click();
-  await expect(page.getByRole('alert')).toContainText('GIGGYDEV_AI_KEY');expect(chatCalls).toBe(0);
+  const open=()=>page.getByRole('button',{name:'Open giggyDev'}).click();
+  const send=async(question:string)=>{await page.getByLabel('Message',{exact:true}).fill(question);await page.getByRole('button',{name:'Send message',exact:true}).click();};
+  await page.goto('http://ai.test');await open();
+  await send('Explain this');await expect(page.getByRole('alert')).toContainText('GIGGYDEV_AI_KEY');expect(chatCalls).toBe(0);
   await expect(page.getByTestId('api-key-help')).toBeVisible();
-  ready=true;await page.reload();await page.getByRole('button',{name:'Open giggyDev'}).click();
-  await expect(page.getByRole('switch', {name:'Edit code'})).not.toBeChecked();
-  await expect(page.getByRole('button', {name:'Propose fix',exact:true})).toHaveCount(0);
-  await page.getByRole('switch', {name:'Edit code'}).check();
-  await page.reload();await page.getByRole('button',{name:'Open giggyDev'}).click();
-  await expect(page.getByRole('switch', {name:'Edit code'})).toBeChecked();
+  ready=true;await page.reload();await open();
+  await page.getByRole('switch',{name:'Edit code'}).check();
+  await expect(page.locator('form button[type="submit"]')).toHaveCount(1);
+  await expect(page.getByRole('button',{name:'Propose fix',exact:true})).toHaveCount(0);
   await page.getByLabel('AI model').selectOption('second');
   await expect(page.getByTestId('api-key-help')).toHaveCount(0);
-  await expect(page.getByLabel('Chat actions').getByLabel('AI model')).toBeVisible();
-  const inputBounds = await page.getByLabel('Message', {exact:true}).boundingBox();
-  const actionBounds = await page.getByLabel('Chat actions').boundingBox();
-  expect(actionBounds!.y - (inputBounds!.y + inputBounds!.height)).toBeGreaterThanOrEqual(16);
-  await page.getByLabel('Message',{exact:true}).fill('Explain and fix this');await page.getByRole('button',{name:'Send message',exact:true}).click();
-  await expect(page.getByRole('log',{name:'Conversation'})).toContainText('The selected model is responding.');
-  await page.getByRole('button',{name:'Propose fix',exact:true}).click();await expect(page.getByLabel('Fix diff')).toContainText('+ const value = 2;');expect(applyCalls).toBe(0);
-  await page.screenshot({path:'test-results/fix-review.png'});
+  await send('Explain the issue');
+  await expect(page.getByRole('log')).toContainText('This is an explanation');
+  await expect(page.getByLabel('Fix diff')).toHaveCount(0);
+  await send('Change padding to 24px');
+  const log=page.getByRole('log',{name:'Conversation'});
+  await expect(log.getByLabel('Proposed fix')).toBeVisible();expect(applyCalls).toBe(0);
+  await page.getByRole('button',{name:'Cancel fix'}).click();
+  await expect(log.getByLabel('Fix history')).toContainText('cancelled');expect(cancelCalls).toBe(1);
+  await send('Change padding to 24px please');
+  await page.getByRole('button',{name:'Approve and apply fix'}).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(log.getByLabel('Applied fix')).toBeVisible();
+  await expect(log.getByLabel('Applied fix').getByLabel('Fix diff')).toBeVisible();
+  const turn=await log.getByLabel('Applied fix').locator('..').getAttribute('data-turn-id');
+  await send('Why does this spacing help?');
+  await expect(log).toContainText('Why does this spacing help?');
+  await expect(log.getByLabel('Applied fix').locator('..')).toHaveAttribute('data-turn-id',turn!);
+  await page.screenshot({path:'test-results/inline-applied-fix.png'});
+  await send('Change padding once more');
+  await page.getByRole('button',{name:'Approve and apply fix'}).click();
+  await expect(log.getByLabel('Applied fix')).toHaveCount(2);expect(applyCalls).toBe(2);
+  await log.getByLabel('Applied fix').last().getByRole('button',{name:'Undo fix'}).click();
+  await expect(log.getByLabel('Fix history').last()).toContainText('undone');expect(undoCalls).toBe(1);
+  await page.keyboard.press('Escape');await open();
+  await page.getByRole('button',{name:'Console',exact:true}).click();await page.getByRole('button',{name:'Chat',exact:true}).click();
+  await expect(log).toContainText('Why does this spacing help?');
+  await expect(log.getByLabel('Applied fix')).toHaveCount(1);
   await page.getByRole('switch',{name:'Edit code'}).uncheck();
-  await expect(page.getByRole('button',{name:'Approve and apply fix'})).toBeDisabled();
-  await page.getByRole('switch',{name:'Edit code'}).check();
-  await page.getByRole('button',{name:'Approve and apply fix'}).click();await expect(page.getByRole('button',{name:'Undo fix'})).toBeEnabled();expect(applyCalls).toBe(1);
-  await page.reload();await page.getByRole('button',{name:'Open giggyDev'}).click();await expect(page.getByRole('button',{name:'Undo fix'})).toBeEnabled();
-  await page.getByRole('button',{name:'Undo fix'}).click();await expect(page.getByLabel('Proposed fix')).toContainText('Original contents restored.');expect(undoCalls).toBe(1);
+  await page.getByRole('button',{name:'Clear chat',exact:true}).click();
+  await expect(log).not.toContainText('Why does this spacing help?');
+  await expect(page.getByLabel('AI model')).toHaveValue('second');
+  await expect(log.getByRole('button',{name:'Undo fix'})).toBeEnabled();
+  await log.getByRole('button',{name:'Undo fix'}).click();expect(undoCalls).toBe(2);
+  await expect(log.getByLabel('Fix history')).toContainText('undone');
+  await page.screenshot({path:'test-results/inline-fix-history.png'});
+  await page.reload();await open();
+  await expect(page.getByRole('log')).toHaveCount(0);
+  await expect(page.getByLabel('Applied fix')).toHaveCount(0);
 });

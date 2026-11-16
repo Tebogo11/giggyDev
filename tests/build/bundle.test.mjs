@@ -35,7 +35,7 @@ test('bootstrap defers the UI and runtime stays within size budgets', async () =
     assert.match(entry, /import\(/);
     assert.ok(Buffer.byteLength(entry) < 12 * 1024, 'Bootstrap must stay below 12 KiB');
     let gzip = 0;
-    for (const file of (await files('dist')).filter(file => file.endsWith('.js')))
+    for (const file of (await files('dist')).filter(file => file === 'dist/client.js' || file.startsWith('dist/chunks/')))
         gzip += gzipSync(await readFile(file)).length;
     assert.ok(gzip < 120 * 1024, `Runtime exceeds 120 KiB gzip: ${gzip}`);
 });

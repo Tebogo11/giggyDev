@@ -12,7 +12,7 @@ export async function serveDemo(page: Page) {
     if (relative(root, path).startsWith('..') || isAbsolute(relative(root, path))) return route.abort();
     try {
       const body = await readFile(path);
-      const types: Record<string, string> = { '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json' };
+      const types: Record<string, string> = { '.js': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.json': 'application/json', '.png': 'image/png' };
       await route.fulfill({ body, contentType: types[extname(path)] ?? 'text/plain' });
     } catch { await route.fulfill({ status: 404, body: 'Not found' }); }
   });

@@ -2,6 +2,16 @@ import type { Entry } from '../../../../src/capture/index';
 
 /** Deterministic playground behavior. No provider calls, keys or filesystem access. */
 export async function simulateReply(_message: string, context: Entry[]): Promise<string> {
+  if (/markdown/i.test(_message)) return [
+    '## Markdown preview',
+    'This is a **simulated** reply with *formatted text* and inline code: `request.ok`.',
+    '### Suggested checks',
+    '- Inspect the selected request.\n- Review the error message.',
+    '1. Check the status.\n2. Verify the fix.',
+    '> Nothing has been changed in your project.',
+    '```ts\nif (!response.ok) {\n  throw new Error("Request failed");\n}\n```',
+    '[Getting started](#start)',
+  ].join('\n\n');
   if (!context.length) {
     return 'This is a simulated reply. Attach a console entry or network request, then ask again to see how selected context shapes a debugging suggestion.';
   }

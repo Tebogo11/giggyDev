@@ -1,0 +1,20 @@
+name: Verify library and consumers
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck && npm run test:unit
+      - run: npm run build && npm run build:playground && npm run build:demo && npm run build:fixture && npm run test:build
+      - run: npx playwright test
+        env:
+          PW_OFFLINE: '1'
+      - run: npm run verify:consumers
+      - run: npm run test:next

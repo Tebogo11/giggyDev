@@ -14,6 +14,9 @@ const hash = (code: string) => createHash('sha256').update(code).digest('hex');
 export function createSourceRegistry(projectRoot: string) {
   const sources = new Map<string, { file: string; hash: string }>();
   const files = new Map<string, string>();
+  // Selection snapshots outlive a hot update. Retain bounded file references,
+  // while preview reads below still enforce their exact content fingerprint.
+  const retired = new Map<string, string>();
   const rootPromise = realpath(resolve(projectRoot));
   return {
     async register(filename: string, code: string): Promise<string | null> {
@@ -25,11 +28,26 @@ export function createSourceRegistry(projectRoot: string) {
         const fingerprint = hash(code);
         const previous = files.get(file);
         if (previous && sources.get(previous)?.hash === fingerprint) return previous;
-        if (previous) sources.delete(previous);
+        if (previous) {
+          sources.delete(previous);
+          retired.set(previous, file);
+          if (retired.size > 2048) retired.delete(retired.keys().next().value!);
+        }
         const id = randomBytes(16).toString('hex');
         sources.set(id, { file, hash: fingerprint });
         files.set(file, id);
         return id;
+      } catch { return null; }
+    },
+    async currentEditable(id: string) {
+      const knownFile = sources.get(id)?.file ?? retired.get(id);
+      if (!knownFile) return null;
+      try {
+        const root = await rootPromise;
+        const file = await realpath(knownFile);
+        if (file !== knownFile || !inside(root, file) || !/\.[jt]sx$/.test(file) || (await stat(file)).size > MAX_SOURCE_BYTES) return null;
+        const code = await readFile(file, 'utf8');
+        return { id: files.get(file) ?? id, file, path: relative(root, file).replaceAll('\\', '/'), code };
       } catch { return null; }
     },
     async editable(id: string) {

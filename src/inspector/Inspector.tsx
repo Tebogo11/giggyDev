@@ -57,7 +57,7 @@ export function Inspector({ open, options, onClose }: { open: boolean; options: 
     <Surface hidden={!open || picking}>
       <Backdrop onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
         <Dialog open={open} ref={dialog} aria-modal="true" aria-label="giggyDev debugger" onKeyDown={handleKeyDown}>
-          <Sidebar view={view} demo={options.mode === 'demo'} onChange={setView} onPick={() => setPicking(true)} />
+          <Sidebar errorCounts={{Console: entries.filter(entry => entry.kind === 'console' && entry.level === 'error').length, Network: entries.filter(entry => entry.kind === 'network' && entry.level === 'error').length}} view={view} demo={options.mode === 'demo'} onChange={setView} onPick={() => setPicking(true)} />
           <Main>
             <Header><h2>{view}</h2><div><Badge>CAPTURE PREVIEW</Badge><CloseButton aria-label="Close giggyDev" onClick={onClose}>×</CloseButton></div></Header>
             {view === 'Console' || view === 'Network' ? (

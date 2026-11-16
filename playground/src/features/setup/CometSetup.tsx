@@ -67,7 +67,7 @@ export default defineConfig({
           <p>Restart the local server, open Chat, select “Claude via CometAPI” or your other configured model, and attach relevant console entries, requests or a picked component. No separate API client or SDK is needed in your app.</p>
           <pre aria-label="CometAPI example prompt">Explain the selected error and request payload. Use the attached source to identify the likely cause. Suggest the smallest fix and a way to verify it.</pre>
           <button type="button" onClick={() => void copy('Explain the selected error and request payload. Use the attached source to identify the likely cause. Suggest the smallest fix and a way to verify it.', 'Example prompt')}>Copy example prompt</button>
-          <p>To change files, enable Edit code, choose Propose fix, review the diff and approve it. Switching the model dropdown changes which configured model handles your next request.</p>
+          <p>To change files, enable Edit code, send your edit request, review the diff and approve it. Switching the model dropdown changes which configured model handles your next request.</p>
         </article>
         <article>
           <h3>Local setup, simulated hosted demo</h3>

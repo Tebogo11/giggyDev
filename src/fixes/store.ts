@@ -3,7 +3,7 @@ import { readFile, realpath, stat, open, rename, unlink } from 'node:fs/promises
 import type { FixProposal } from '../ai/types';
 export interface EditableSource { id: string; file: string; path: string; code: string }
 const fingerprint = (code: string) => createHash('sha256').update(code).digest('hex');
-interface StoredProposal extends FixProposal { file: string; state: 'proposed' | 'applied' | 'undone' }
+interface StoredProposal extends FixProposal { file: string; state: 'proposed' | 'applied' | 'undone' | 'cancelled' }
 
 /** Review IDs reference server snapshots; callers cannot supply paths or replacement text on apply. */
 export function createFixStore() {
@@ -34,6 +34,12 @@ export function createFixStore() {
       proposals.set(proposal.id, proposal);
       const { file, state, ...publicProposal } = proposal;
       return publicProposal;
+    },
+    cancel(id: string) {
+      const proposal = proposals.get(id);
+      if (!proposal || proposal.state !== 'proposed') throw new Error('Only a pending proposal can be cancelled');
+      if (busy.has(proposal.file)) throw new Error('Another edit is in progress');
+      proposal.state = 'cancelled';
     },
     async apply(id: string) {
       const proposal = proposals.get(id);
