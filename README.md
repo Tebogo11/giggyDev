@@ -1,5 +1,7 @@
 # giggyDev
 
+![giggyDev explaining a selected network error](https://raw.githubusercontent.com/Tebogo11/giggyDev/main/playground/public/images/widget-preview.png)
+
 [Try the live playground](https://giggydev.netlify.app/) — explore the widget with simulated AI replies and code edits.
 
 A development-only debugging overlay for React/Vite. Console and network capture, filtering, expandable metadata and selected context are implemented. The hosted playground includes simulated chat. DOM element picking and Vite development source inspection are available. Configured AI chat and reviewed single-file fixes are available locally. Next.js integration is planned.

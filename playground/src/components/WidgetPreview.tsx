@@ -10,7 +10,13 @@ const Preview = styled.figure`
 export function WidgetPreview() {
   const [missing, setMissing] = useState(false);
   return <Preview aria-label="Widget screenshot">
-    {missing ? <div className="missing-image">The widget preview image is not available yet.</div> : <img src="/images/widget-preview.png" width="1659" height="649" alt="giggyDev explaining a selected aborted network request, with its source location, likely causes and attached request context." onError={() => setMissing(true)} />}
+    {missing ? <div className="missing-image">The widget preview image is not available yet.</div> : <img
+      src="/images/widget-preview.png"
+      alt="giggyDev explaining a selected network error"
+      width="1659"
+      height="649"
+      onError={() => setMissing(true)}
+    />}
     <figcaption>From a failed request to an explanation: select the error, attach its context and ask your chosen AI model what happened.</figcaption>
   </Preview>;
 }
