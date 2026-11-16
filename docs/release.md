@@ -38,9 +38,9 @@ Inspect the archive with `npm pack --dry-run`. It should contain dist, package.j
 
 - Confirm you own or can publish the npm name `giggydev`: `npm view giggydev name version` and, if it exists, `npm owner ls giggydev`. An E404 indicates no published package was found; recheck at publish time.
 - If the name must change, update package metadata, import examples and the Next loader's `jsxImportSource` before rebuilding and rerunning consumer verification.
-- Choose the project license and add its LICENSE file and package.json license field. No license has been selected automatically.
+- The project uses the MIT license; LICENSE and package.json include it.
 - Confirm the version (currently 0.1.0), author, repository and README.
-- Remove `"private": true` only when you are ready to publish. It remains enabled to prevent accidental publication during review.
+- The package is configured for public publication (publishConfig.access is public); review the archive before publishing.
 - Commit and push the reviewed files from a terminal that can write this repository's .git directory. Check the Verify workflow succeeds.
 
 ## 4. Publish npm interactively
