@@ -47,7 +47,8 @@ export default defineConfig({
       <div className="guide-grid">
         <article>
           <h3>1. Create a key and choose text models</h3>
-          <p>Follow the <a href="https://www.cometapi.com/quickstart/" target="_blank" rel="noreferrer">CometAPI quickstart</a> to create an account and API key. Browse <a href="https://www.cometapi.com/models/?search=claude" target="_blank" rel="noreferrer">Claude and other models</a>, check access and pricing, and copy the exact model ID. The IDs below are examples; choose models that support streaming Chat Completions.</p>
+          <p>Create a <a href="https://www.cometapi.com/?ref=tebogo" target="_blank" rel="sponsored noopener noreferrer">CometAPI account</a>, then follow the <a href="https://www.cometapi.com/quickstart/" target="_blank" rel="noreferrer">CometAPI quickstart</a> to generate your API key. Browse <a href="https://www.cometapi.com/models/?search=claude" target="_blank" rel="noreferrer">Claude and other models</a>, check access and pricing, and copy the exact model ID. The IDs below are examples; choose models that support streaming Chat Completions.</p>
+          <p className="guide-note">Affiliate disclosure: I may earn a commission from eligible purchases made through the CometAPI account link.</p>
           <p>Your selected logs, request payloads, source and prompts are sent through CometAPI when you use these models.</p>
           <h3>2. Save the key locally</h3>
           <p>Create <code>{playground ? 'playground/.env.local' : '.env.local'}</code> in your Vite env directory. Replace the placeholder; keep this file out of Git and never prefix the key with <code>VITE_</code>.</p>
