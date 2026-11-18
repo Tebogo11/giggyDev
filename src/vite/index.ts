@@ -26,9 +26,13 @@ export default function giggyDev(options: { ai?: AIOptions } = {}): Plugin {
     },
     resolveId(id) { if (id === jsxRuntimeId) return resolvedJsxRuntimeId; },
     load(id) { if (id === resolvedJsxRuntimeId) return jsxRuntimeCode; },
-    async transform(code, id, options) {
-      if (options?.ssr || !/\.[jt]sx(?:\?|$)/.test(id)) return;
-      return instrumentSource(code, id, registry);
+    transform: {
+      // React also uses enforce: 'pre'. Read the original JSX before its Fast Refresh transform.
+      order: 'pre',
+      async handler(code, id, options) {
+        if (options?.ssr || !/\.[jt]sx(?:\?|$)/.test(id)) return;
+        return instrumentSource(code, id, registry);
+      },
     },
     transformIndexHtml() {
       return [{ tag: 'script', attrs: { type: 'module', src: `${runtimePrefix}client.js` }, injectTo: 'body' }];

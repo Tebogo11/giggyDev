@@ -50,6 +50,21 @@ test('source endpoint requires same origin, a session token and registered locat
   assert.equal((await request({url:'/?id=not-registered&line=1&column=1'})).statusCode,404);
 });
 
+test('source preview uses the same line breaks as the JSX transform', async () => {
+  const root = await mkdtemp(resolve('.test-build/source-line-breaks-'));
+  const file = join(root, 'Button.jsx');
+  const code = '// First line\rexport const Button = () =>\u2028  <button>Pick me</button>;';
+  await writeFile(file, code);
+  const registry = createSourceRegistry(root);
+  const transformed = await instrumentSource(code, file, registry);
+  const location = transformed.code.match(/fileName: "([^"]+)",\s*lineNumber: (\d+),\s*columnNumber: (\d+)/);
+  assert.ok(location, 'JSX transform emits a source location');
+
+  const preview = await registry.read(location[1], Number(location[2]), Number(location[3]));
+  assert.equal(preview?.line, 3);
+  assert.equal(preview.code.split('\n')[2], '  <button>Pick me</button>;');
+});
+
 test('instrumented JSX runtime preserves fragments and adds intrinsic source metadata',async()=>{
   const file=resolve('.test-build/test-jsx-runtime.mjs');
   await writeFile(file,jsxRuntimeCode);
@@ -62,13 +77,21 @@ test('instrumented JSX runtime preserves fragments and adds intrinsic source met
 test('Vite development pipeline resolves the instrumented JSX runtime and fragments',async()=>{
   const {createServer}=await import('vite');
   const {default:giggyDev}=await import('../../.test-build/vite.mjs');
+  const reactLikePlugin = {
+    name: 'react-like-pre-transform',
+    enforce: 'pre',
+    transform(code, id) {
+      if (id.endsWith('/Hero.tsx')) return '// React transform preamble\n' + code;
+    },
+  };
   const server=await createServer({
-    configFile:false,root:resolve('playground'),plugins:[giggyDev()],
+    configFile:false,root:resolve('playground'),plugins:[reactLikePlugin,giggyDev()],
     server:{middlewareMode:true,hmr:false,watch:null,preTransformRequests:false},optimizeDeps:{noDiscovery:true,include:[]},
   });
   try {
     const transformed=await server.transformRequest('/src/components/Hero.tsx');
     assert.match(transformed.code,/giggydev:jsx-runtime/);
+    assert.match(transformed.code, /lineNumber: 7,\s*columnNumber: 97/, 'JSX metadata points to the original file even when a React transform is listed first');
     const runtime=await server.transformRequest('virtual:giggydev/jsx-dev-runtime');
     assert.match(runtime.code,/data-giggy-source/);
     assert.match(runtime.code,/Fragment/);
